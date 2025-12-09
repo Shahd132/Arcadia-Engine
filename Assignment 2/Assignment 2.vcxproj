@@ -127,10 +127,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\Downloads\Algorithms\ArcadiaEngine.cpp" />
+    <ClCompile Include="ArcadiaEngine.c++" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\Downloads\Algorithms\ArcadiaEngine.h" />
+    <ClInclude Include="ArcadiaEngine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
