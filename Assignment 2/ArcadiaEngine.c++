@@ -427,11 +427,50 @@ long long InventorySystem::countStringPossibilities(string s) {
 // PART C: WORLD NAVIGATOR (Graphs)
 // =========================================================
 
+
 bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
     // TODO: Implement path existence check using BFS or DFS
     // edges are bidirectional
+
+    //case 1 src=dest
+    if(source==dest){
+        return true;
+    }
+
+    //create the adjacency list(list of city neighbors)
+    vector<vector<int>> adj(n);
+    for (const auto& edge : edges){
+        int from =edge[0];
+        int to =edge[1];
+        adj[from].push_back(to);
+        adj[to].push_back(from);
+    }
+
+    // BFS
+    vector<bool> visited(n, false);
+    queue<int> q ;
+    // Start from source city
+    q.push(source);
+    visited[source] = true;       
+    
+    while (!q.empty()) {
+        int current =q.front();
+        q.pop();
+        // Check if we found destination
+        if (current == dest){
+            return true;
+        }
+        //get not visited neighbors
+        for (int neighbor : adj[current]) {
+            if (!visited[neighbor]) {
+                visited[neighbor] = true;
+                q.push(neighbor);
+            }
+        }
+    }
     return false;
 }
+
 
 long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long long silverRate,
     vector<vector<int>>& roadData) {
