@@ -72,27 +72,278 @@ public:
 };
 
 // --- 3. AuctionTree (Red-Black Tree) ---
-
 class ConcreteAuctionTree : public AuctionTree {
 private:
-    // TODO: Define your Red-Black Tree node structure
-    // Hint: Each node needs: id, price, color, left, right, parent pointers
+    enum Color { Red, Black };
+
+    struct Node {
+        int id;
+        int price;
+        Color color;
+        Node* left;
+        Node* right;
+        Node* parent;
+
+        Node(int id, int price, Node* NIL) {
+            this->id = id;
+            this->price = price;
+            color = Red;
+            left = NIL;
+            right = NIL;
+            parent = NIL;
+        }
+    };
+
+    Node* root;
+    Node* NIL;
+
+    void rotateLeft(Node* node) {
+        Node* x = node->right;
+        node->right = x->left;
+        if (x->left != NIL)
+            x->left->parent = node;
+        x->parent = node->parent;
+        if (node->parent == NIL)
+            root = x;
+        else if (node == node->parent->left)
+            node->parent->left = x;
+        else
+            node->parent->right = x;
+        x->left = node;
+        node->parent = x;
+    }
+
+    void rotateRight(Node* node) {
+        Node* x = node->left;
+        node->left = x->right;
+        if (x->right != NIL)
+            x->right->parent = node;
+        x->parent = node->parent;
+        if (node->parent == NIL)
+            root = x;
+        else if (node == node->parent->right)
+            node->parent->right = x;
+        else
+            node->parent->left = x;
+        x->right = node;
+        node->parent = x;
+    }
+
+    void fixInsertion(Node* node) {
+        while (node != root && node->parent->color == Red) {
+            Node* parent = node->parent;
+            Node* grandParent = parent->parent;
+            if (parent == grandParent->left) {
+                Node* uncle = grandParent->right;
+                if (uncle->color == Red) { // Case 1
+                    parent->color = Black;
+                    uncle->color = Black;
+                    grandParent->color = Red;
+                    node = grandParent;
+                }
+                else {
+                    if (node == parent->right) { // Case 2
+                        node = parent;
+                        rotateLeft(node);
+                        parent = node->parent;
+                        grandParent = parent->parent;
+                    }
+                    parent->color = Black; // Case 3
+                    grandParent->color = Red;
+                    rotateRight(grandParent);
+                }
+            }
+            else {
+                Node* uncle = grandParent->left;
+                if (uncle->color == Red) { // Case 4
+                    parent->color = Black;
+                    uncle->color = Black;
+                    grandParent->color = Red;
+                    node = grandParent;
+                }
+                else {
+                    if (node == parent->left) { // Case 5
+                        node = parent;
+                        rotateRight(node);
+                        parent = node->parent;
+                        grandParent = parent->parent;
+                    }
+                    parent->color = Black; // Case 6
+                    grandParent->color = Red;
+                    rotateLeft(grandParent);
+                }
+            }
+        }
+        root->color = Black;
+    }
+
+    void replaceNode(Node* oldNode, Node* newNode) {
+        if (oldNode->parent == NIL)
+            root = newNode;
+        else if (oldNode == oldNode->parent->left)
+            oldNode->parent->left = newNode;
+        else
+            oldNode->parent->right = newNode;
+        newNode->parent = oldNode->parent;
+    }
+
+    Node* minimum(Node* node) {
+        while (node->left != NIL)
+            node = node->left;
+        return node;
+    }
+
+    void fixDeletion(Node* node) 
+    {
+        while (node != root && node->color == Black) 
+        {
+            if (node == node->parent->left) 
+            {
+                Node* sibling = node->parent->right;
+                if (sibling->color == Red) 
+                //case4
+                {
+                    sibling->color = Black;
+                    node->parent->color = Red;
+                    rotateLeft(node->parent);
+                    sibling = node->parent->right;
+                }
+                if (sibling->left->color == Black && sibling->right->color == Black)//case3
+                {
+                    sibling->color = Red;
+                    node = node->parent;
+                }
+                else 
+                {
+                    if (sibling->right->color == Black)//case5
+                    { 
+                        sibling->left->color = Black;
+                        sibling->color = Red;
+                        rotateRight(sibling);
+                        sibling = node->parent->right;
+                    }
+                    sibling->color = node->parent->color;//case6
+                    node->parent->color = Black;
+                    sibling->right->color = Black;
+                    rotateLeft(node->parent);
+                    break; 
+                }
+            }
+            else 
+            {
+                Node* sibling = node->parent->left;
+                if (sibling->color == Red)//case4
+                {
+                    sibling->color = Black;
+                    node->parent->color = Red;
+                    rotateRight(node->parent);
+                    sibling = node->parent->left;
+                }
+                if (sibling->left->color == Black && sibling->right->color == Black)//case3
+                {
+                    sibling->color = Red;
+                    node = node->parent;
+                }
+                else 
+                {
+                    if (sibling->left->color == Black)//case5
+                    {
+                        sibling->right->color = Black;
+                        sibling->color = Red;
+                        rotateLeft(sibling);
+                        sibling = node->parent->left;
+                    }
+                    sibling->color = node->parent->color;//case6
+                    node->parent->color = Black;
+                    sibling->left->color = Black;
+                    rotateRight(node->parent);
+                    break; 
+                }
+            }
+        }
+        node->color = Black;
+    }
 
 public:
     ConcreteAuctionTree() {
-        // TODO: Initialize your Red-Black Tree
+        NIL = new Node(-1, -1, nullptr);
+        NIL->color = Black;
+        NIL->left = NIL->right = NIL->parent = NIL;
+        root = NIL;
     }
 
     void insertItem(int itemID, int price) override {
-        // TODO: Implement Red-Black Tree insertion
-        // Remember to maintain RB-Tree properties with rotations and recoloring
+        Node* newNode = new Node(itemID, price, NIL);
+        Node* parent = NIL;
+        Node* current = root;
+        while (current != NIL) 
+        {
+            parent = current;
+            if (itemID < current->id)
+                current = current->left;
+            else
+                current = current->right;
+        }
+        newNode->parent = parent;
+        if (parent == NIL)
+            root = newNode;
+        else if (itemID < parent->id)
+            parent->left = newNode;
+        else
+            parent->right = newNode;
+        fixInsertion(newNode);
     }
 
-    void deleteItem(int itemID) override {
-        // TODO: Implement Red-Black Tree deletion
-        // This is complex - handle all cases carefully
+    void deleteItem(int itemID) override 
+    {
+        Node* z = root;
+        while (z != NIL && z->id != itemID) 
+        {
+            if (itemID < z->id)
+                z = z->left;
+            else
+                z = z->right;
+        }
+        if (z == NIL) return;
+
+        Node* successor = z;
+        Color originalColor = successor->color;
+        Node* x;
+
+        if (z->left == NIL) 
+        {
+            x = z->right;
+            replaceNode(z, z->right);
+        }
+        else if (z->right == NIL) 
+        {
+            x = z->left;
+            replaceNode(z, z->left);
+        }
+        else 
+        {
+            successor = minimum(z->right);
+            originalColor = successor->color;
+            x = successor->right;
+            if (successor->parent == z)
+                x->parent = successor;
+            else 
+            {
+                replaceNode(successor, successor->right);
+                successor->right = z->right;
+                successor->right->parent = successor;
+            }
+            replaceNode(z, successor);
+            successor->left = z->left;
+            successor->left->parent = successor;
+            successor->color = z->color;
+        }
+        if (originalColor == Black)
+            fixDeletion(x);
+        delete z;
     }
 };
+
 
 // =========================================================
 // PART B: INVENTORY SYSTEM (Dynamic Programming)
