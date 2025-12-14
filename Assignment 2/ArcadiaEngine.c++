@@ -72,7 +72,7 @@ public:
             }
         }
         // Table is full
-        throw runtime_error("Hash table is full");
+        cout << "Table is Full";
     }
 
     string search(int playerID) override {
@@ -84,10 +84,7 @@ public:
         for(int i=0 ; i<tableSize;i++){
             int position=(index1+i*index2)%tableSize;
 
-            if(! hashTable[position].isOccupied){
-                return "";
-            }
-            if(hashTable[position].key==playerID){
+            if (hashTable[position].isOccupied && hashTable[position].key == playerID){
                 return hashTable[position].value;
             }
         }
