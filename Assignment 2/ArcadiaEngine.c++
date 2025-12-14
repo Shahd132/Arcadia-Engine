@@ -1,5 +1,6 @@
 // ArcadiaEngine.cpp - STUDENT TEMPLATE
 // TODO: Implement all the functions below according to the assignment requirements
+//final
 
 #include "ArcadiaEngine.h"
 #include <algorithm>
@@ -32,26 +33,26 @@ private:
         string value;   //player name
         bool isOccupied;
 
-        Entry(): key(0), value(""),isOccupied(false) {}
+        Entry() : key(0), value(""), isOccupied(false) {}
     };
-    vector<Entry> hashTable ;
+    vector<Entry> hashTable;
     int tableSize;
-    int hash1(int key ,int tableSize){ // h(k) = floor( n( kA mod 1 ) )
-        const double A=0.618033;
+    int hash1(int key, int tableSize) { // h(k) = floor( n( kA mod 1 ) )
+        const double A = 0.618033;
         //floor(tableSize*((key*A) % 1));
-        double fractionPart=key * A - floor(key * A);
-        return floor(tableSize*fractionPart);
+        double fractionPart = key * A - floor(key * A);
+        return floor(tableSize * fractionPart);
     }
     //hash2(key) = PRIME – (key %PRIME) where PRIME is a prime smaller than the TABLE_SIZE.
-    int hash2(int key){
-        const int prime=97;
-        return (prime - key%prime);
+    int hash2(int key) {
+        const int prime = 97;
+        return (prime - key % prime);
     }
-    
+
 public:
     ConcretePlayerTable() {
         // TODO: Initialize your hash table
-        tableSize =101 ;//prim
+        tableSize = 101;//prim
         hashTable.resize(tableSize);
     }
 
@@ -59,15 +60,15 @@ public:
         // TODO: Implement double hashing insert
         // Remember to handle collisions using h1(key) + i * h2(key)
 
-        int index1=hash1(playerID,tableSize);
-        int index2=hash2(playerID);
+        int index1 = hash1(playerID, tableSize);
+        int index2 = hash2(playerID);
 
-        for(int i=0;i<tableSize; i++){
-            int position=(index1+i*index2)%tableSize;
-            if(! hashTable[position].isOccupied){
-                hashTable[position].key=playerID;
-                hashTable[position].value=name;
-                hashTable[position].isOccupied=true;
+        for (int i = 0; i < tableSize; i++) {
+            int position = (index1 + i * index2) % tableSize;
+            if (!hashTable[position].isOccupied) {
+                hashTable[position].key = playerID;
+                hashTable[position].value = name;
+                hashTable[position].isOccupied = true;
                 return; //inserted
             }
         }
@@ -78,13 +79,13 @@ public:
     string search(int playerID) override {
         // TODO: Implement double hashing search
         // Return "" if player not found
-        int index1=hash1(playerID,tableSize);
-        int index2=hash2(playerID);
+        int index1 = hash1(playerID, tableSize);
+        int index2 = hash2(playerID);
 
-        for(int i=0 ; i<tableSize;i++){
-            int position=(index1+i*index2)%tableSize;
+        for (int i = 0; i < tableSize; i++) {
+            int position = (index1 + i * index2) % tableSize;
 
-            if (hashTable[position].isOccupied && hashTable[position].key == playerID){
+            if (hashTable[position].isOccupied && hashTable[position].key == playerID) {
                 return hashTable[position].value;
             }
         }
@@ -102,7 +103,8 @@ private:
         vector<Node*> forward;
 
         Node(int id, int s, int level)
-            : playerID(id), score(s), forward(level, nullptr) {}
+            : playerID(id), score(s), forward(level, nullptr) {
+        }
     };
 
     static const int MAX_LEVEL = 16;
@@ -136,9 +138,9 @@ public:
         // Find insertion position
         for (int i = level - 1; i >= 0; i--) {
             while (curr->forward[i] &&
-                   comesBefore(curr->forward[i]->score,
-                               curr->forward[i]->playerID,
-                               score, playerID)) {
+                comesBefore(curr->forward[i]->score,
+                    curr->forward[i]->playerID,
+                    score, playerID)) {
                 curr = curr->forward[i];
             }
             update[i] = curr;
@@ -171,7 +173,7 @@ public:
 
         for (int i = level - 1; i >= 0; i--) {
             while (curr->forward[i] &&
-                   curr->forward[i]->playerID < playerID) {
+                curr->forward[i]->playerID < playerID) {
                 curr = curr->forward[i];
             }
             update[i] = curr;
@@ -327,15 +329,15 @@ private:
         return node;
     }
 
-    void fixDeletion(Node* node) 
+    void fixDeletion(Node* node)
     {
-        while (node != root && node->color == Black) 
+        while (node != root && node->color == Black)
         {
-            if (node == node->parent->left) 
+            if (node == node->parent->left)
             {
                 Node* sibling = node->parent->right;
-                if (sibling->color == Red) 
-                //case4
+                if (sibling->color == Red)
+                    //case4
                 {
                     sibling->color = Black;
                     node->parent->color = Red;
@@ -347,10 +349,10 @@ private:
                     sibling->color = Red;
                     node = node->parent;
                 }
-                else 
+                else
                 {
                     if (sibling->right->color == Black)//case5
-                    { 
+                    {
                         sibling->left->color = Black;
                         sibling->color = Red;
                         rotateRight(sibling);
@@ -360,10 +362,10 @@ private:
                     node->parent->color = Black;
                     sibling->right->color = Black;
                     rotateLeft(node->parent);
-                    break; 
+                    break;
                 }
             }
-            else 
+            else
             {
                 Node* sibling = node->parent->left;
                 if (sibling->color == Red)//case4
@@ -378,7 +380,7 @@ private:
                     sibling->color = Red;
                     node = node->parent;
                 }
-                else 
+                else
                 {
                     if (sibling->left->color == Black)//case5
                     {
@@ -391,7 +393,7 @@ private:
                     node->parent->color = Black;
                     sibling->left->color = Black;
                     rotateRight(node->parent);
-                    break; 
+                    break;
                 }
             }
         }
@@ -410,7 +412,7 @@ public:
         Node* newNode = new Node(itemID, price, NIL);
         Node* parent = NIL;
         Node* current = root;
-        while (current != NIL) 
+        while (current != NIL)
         {
             parent = current;
             if (itemID < current->id)
@@ -428,10 +430,10 @@ public:
         fixInsertion(newNode);
     }
 
-    void deleteItem(int itemID) override 
+    void deleteItem(int itemID) override
     {
         Node* z = root;
-        while (z != NIL && z->id != itemID) 
+        while (z != NIL && z->id != itemID)
         {
             if (itemID < z->id)
                 z = z->left;
@@ -444,24 +446,24 @@ public:
         Color originalColor = successor->color;
         Node* x;
 
-        if (z->left == NIL) 
+        if (z->left == NIL)
         {
             x = z->right;
             replaceNode(z, z->right);
         }
-        else if (z->right == NIL) 
+        else if (z->right == NIL)
         {
             x = z->left;
             replaceNode(z, z->left);
         }
-        else 
+        else
         {
             successor = minimum(z->right);
             originalColor = successor->color;
             x = successor->right;
             if (successor->parent == z)
                 x->parent = successor;
-            else 
+            else
             {
                 replaceNode(successor, successor->right);
                 successor->right = z->right;
@@ -487,7 +489,7 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     // TODO: Implement partition problem using DP
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
-     int totalSum = accumulate(coins.begin(), coins.end(), 0);
+    int totalSum = accumulate(coins.begin(), coins.end(), 0);
     int target = totalSum / 2;
 
     vector<bool> dp(target + 1, false);
@@ -557,31 +559,31 @@ bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, i
     // edges are bidirectional
 
     //case 1 src=dest
-    if(source==dest){
+    if (source == dest) {
         return true;
     }
 
     //create the adjacency list(list of city neighbors)
     vector<vector<int>> adj(n);
-    for (const auto& edge : edges){
-        int from =edge[0];
-        int to =edge[1];
+    for (const auto& edge : edges) {
+        int from = edge[0];
+        int to = edge[1];
         adj[from].push_back(to);
         adj[to].push_back(from);
     }
 
     // BFS
     vector<bool> visited(n, false);
-    queue<int> q ;
+    queue<int> q;
     // Start from source city
     q.push(source);
-    visited[source] = true;       
-    
+    visited[source] = true;
+
     while (!q.empty()) {
-        int current =q.front();
+        int current = q.front();
         q.pop();
         // Check if we found destination
-        if (current == dest){
+        if (current == dest) {
             return true;
         }
         //get not visited neighbors
@@ -602,7 +604,51 @@ long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long lo
     // roadData[i] = {u, v, goldCost, silverCost}
     // Total cost = goldCost * goldRate + silverCost * silverRate
     // Return -1 if graph cannot be fully connected
-    return -1;
+    vector<int> parent(n);
+    for (int i = 0; i < n; i++) parent[i] = i;
+
+    function<int(int)> find = [&](int x) {
+        if (parent[x] == x)
+            return x;
+        return find(parent[x]);
+        };
+
+    auto unite = [&](int a, int b) {
+        a = find(a);
+        b = find(b);
+        if (a == b) return false;
+        parent[b] = a;
+        return true;
+        };
+
+    // Compute cost of each road
+    vector<pair<long long, pair<int, int>>> edges;
+
+    for (auto& r : roadData) {
+        int u = r[0];
+        int v = r[1];
+        long long gold = r[2];
+        long long silver = r[3];
+        long long cost = gold * goldRate + silver * silverRate;
+        edges.push_back({ cost, {u, v} });
+    }
+
+    sort(edges.begin(), edges.end());
+
+    long long totalCost = 0;
+    int connectedEdges = 0;
+
+    for (auto& e : edges) {
+        if (unite(e.second.first, e.second.second)) {
+            totalCost += e.first;
+            connectedEdges++;
+            if (connectedEdges == n - 1) break;
+        }
+    }
+
+    if (connectedEdges != n - 1) return -1;
+    return totalCost;
+
 }
 
 string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
@@ -610,7 +656,57 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) 
     // Sum all shortest distances between unique pairs (i < j)
     // Return the sum as a binary string
     // Hint: Handle large numbers carefully
-    return "0";
+    const long long INF = 1e15;
+
+    // Step 1: Initialize distance matrix
+    vector<vector<long long>> dist(n, vector<long long>(n, INF));
+
+    for (int i = 0; i < n; i++)
+        dist[i][i] = 0;
+
+    // roads[i] = {u, v, w}
+    for (auto& r : roads) {
+        int u = r[0], v = r[1];
+        long long w = r[2];
+
+        dist[u][v] = min(dist[u][v], w);
+        dist[v][u] = min(dist[v][u], w); // undirected
+    }
+
+    // Step 2: Floyd–Warshall
+    for (int k = 0; k < n; k++) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (dist[i][k] + dist[k][j] < dist[i][j]) {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                }
+            }
+        }
+    }
+
+    // Step 3: Sum all distances
+    long long total = 0;
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (dist[i][j] < INF)
+                total += dist[i][j];
+        }
+    }
+
+    // Step 4: Convert to binary
+    string bin = "";
+    while (total > 0) {
+        bin.push_back((total % 2) + '0');
+        total /= 2;
+    }
+
+    if (bin.empty())
+        return "0";
+
+    reverse(bin.begin(), bin.end());
+    return bin;
+    //return "0";
 }
 
 // =========================================================
@@ -622,7 +718,7 @@ int ServerKernel::minIntervals(vector<char>& tasks, int n) {
     // Same task must wait 'n' intervals before running again
     // Return minimum total intervals needed (including idle time)
     // Hint: Use greedy approach with frequency counting
-    if (n == 0) 
+    if (n == 0)
         return tasks.size();
 
     vector<int> freq(26, 0);
