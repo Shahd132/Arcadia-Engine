@@ -14,6 +14,8 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <functional>
+
 
 using namespace std;
 
@@ -167,7 +169,7 @@ public:
         }
     }
 
-    void removePlayer(int playerID) override {
+    /*void removePlayer(int playerID) override {
         vector<Node*> update(MAX_LEVEL, nullptr);
         Node* curr = head;
 
@@ -192,7 +194,37 @@ public:
             while (level > 1 && head->forward[level - 1] == nullptr)
                 level--;
         }
+    }*/
+    void removePlayer(int playerID) override {
+        vector<Node*> update(MAX_LEVEL, nullptr);
+        Node* curr = head;
+
+        for (int i = level - 1; i >= 0; i--) {
+            while (curr->forward[i] &&
+                comesBefore(curr->forward[i]->score,
+                    curr->forward[i]->playerID,
+                    INT_MAX, playerID)) {
+                curr = curr->forward[i];
+            }
+            update[i] = curr;
+        }
+
+        curr = curr->forward[0];
+
+        if (curr && curr->playerID == playerID) {
+            for (int i = 0; i < level; i++) {
+                if (update[i]->forward[i] != curr)
+                    break;
+                update[i]->forward[i] = curr->forward[i];
+            }
+            delete curr;
+
+            while (level > 1 && head->forward[level - 1] == nullptr)
+                level--;
+        }
     }
+
+
 
     vector<int> getTopN(int n) override {
         vector<int> result;
@@ -651,6 +683,64 @@ long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long lo
 
 }
 
+//string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
+//    // TODO: Implement All-Pairs Shortest Path (Floyd-Warshall)
+//    // Sum all shortest distances between unique pairs (i < j)
+//    // Return the sum as a binary string
+//    // Hint: Handle large numbers carefully
+//    const long long INF = 1e15;
+//
+//    // Step 1: Initialize distance matrix
+//    vector<vector<long long>> dist(n, vector<long long>(n, INF));
+//
+//    for (int i = 0; i < n; i++)
+//        dist[i][i] = 0;
+//
+//    // roads[i] = {u, v, w}
+//    for (auto& r : roads) {
+//        int u = r[0], v = r[1];
+//        long long w = r[2];
+//
+//        dist[u][v] = min(dist[u][v], w);
+//        dist[v][u] = min(dist[v][u], w); // undirected
+//    }
+//
+//    // Step 2: Floyd–Warshall
+//    for (int k = 0; k < n; k++) {
+//        for (int i = 0; i < n; i++) {
+//            for (int j = 0; j < n; j++) {
+//                if (dist[i][k] + dist[k][j] < dist[i][j]) {
+//                    dist[i][j] = dist[i][k] + dist[k][j];
+//                }
+//            }
+//        }
+//    }
+//
+//    // Step 3: Sum all distances
+//    long long total = 0;
+//
+//    for (int i = 0; i < n; i++) {
+//        for (int j = 0; j < n; j++) {
+//            if (dist[i][j] < INF)
+//                total += dist[i][j];
+//        }
+//    }
+//
+//    // Step 4: Convert to binary
+//    string bin = "";
+//    while (total > 0) {
+//        bin.push_back((total % 2) + '0');
+//        total /= 2;
+//    }
+//
+//    if (bin.empty())
+//        return "0";
+//
+//    reverse(bin.begin(), bin.end());
+//    return bin;
+//    //return "0";
+//}
+
 string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
     // TODO: Implement All-Pairs Shortest Path (Floyd-Warshall)
     // Sum all shortest distances between unique pairs (i < j)
@@ -658,22 +748,17 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) 
     // Hint: Handle large numbers carefully
     const long long INF = 1e15;
 
-    // Step 1: Initialize distance matrix
     vector<vector<long long>> dist(n, vector<long long>(n, INF));
-
     for (int i = 0; i < n; i++)
         dist[i][i] = 0;
 
-    // roads[i] = {u, v, w}
     for (auto& r : roads) {
         int u = r[0], v = r[1];
         long long w = r[2];
-
         dist[u][v] = min(dist[u][v], w);
-        dist[v][u] = min(dist[v][u], w); // undirected
+        dist[v][u] = min(dist[v][u], w);
     }
 
-    // Step 2: Floyd–Warshall
     for (int k = 0; k < n; k++) {
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -684,17 +769,14 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) 
         }
     }
 
-    // Step 3: Sum all distances
     long long total = 0;
 
     for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if (dist[i][j] < INF)
-                total += dist[i][j];
+        for (int j = i + 1; j < n; j++) {
+            total += dist[i][j];
         }
     }
 
-    // Step 4: Convert to binary
     string bin = "";
     while (total > 0) {
         bin.push_back((total % 2) + '0');
@@ -706,8 +788,9 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) 
 
     reverse(bin.begin(), bin.end());
     return bin;
-    //return "0";
 }
+
+
 
 // =========================================================
 // PART D: SERVER KERNEL (Greedy)
