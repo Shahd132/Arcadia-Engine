@@ -801,6 +801,8 @@ int ServerKernel::minIntervals(vector<char>& tasks, int n) {
     // Same task must wait 'n' intervals before running again
     // Return minimum total intervals needed (including idle time)
     // Hint: Use greedy approach with frequency counting
+    if(tasks.empty())
+        return 0;
     if (n == 0)
         return tasks.size();
 
