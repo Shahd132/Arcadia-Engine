@@ -15,7 +15,7 @@
 #include <map>
 #include <set>
 #include <functional>
-
+#include <unordered_map>
 
 using namespace std;
 
@@ -104,22 +104,20 @@ public:
 };
 
 // --- 2. Leaderboard (Skip List) ---
-
 class ConcreteLeaderboard : public Leaderboard {
 private:
     struct Node {
         int playerID;
         int score;
         vector<Node*> forward;
-
         Node(int id, int s, int level)
-            : playerID(id), score(s), forward(level, nullptr) {
-        }
+            : playerID(id), score(s), forward(level, nullptr) {}
     };
 
     static const int MAX_LEVEL = 16;
     int level;
     Node* head;
+    unordered_map<int, int> playerScores; // NEW: playerID -> score
 
     int randomLevel() {
         int lvl = 1;
@@ -128,10 +126,8 @@ private:
         return lvl;
     }
 
-    // Comparison: higher score first, tie by smaller ID
     bool comesBefore(int score1, int id1, int score2, int id2) {
-        if (score1 != score2)
-            return score1 > score2;
+        if (score1 != score2) return score1 > score2;
         return id1 < id2;
     }
 
@@ -142,10 +138,11 @@ public:
     }
 
     void addScore(int playerID, int score) override {
+        removePlayer(playerID); 
+        playerScores[playerID] = score;
+
         vector<Node*> update(MAX_LEVEL, nullptr);
         Node* curr = head;
-
-        // Find insertion position
         for (int i = level - 1; i >= 0; i--) {
             while (curr->forward[i] &&
                 comesBefore(curr->forward[i]->score,
@@ -154,13 +151,6 @@ public:
                 curr = curr->forward[i];
             }
             update[i] = curr;
-        }
-
-        curr = curr->forward[0];
-
-        // If player exists → remove old score first
-        if (curr && curr->playerID == playerID) {
-            removePlayer(playerID);
         }
 
         int newLevel = randomLevel();
@@ -177,72 +167,52 @@ public:
         }
     }
 
-    /*void removePlayer(int playerID) override {
-        vector<Node*> update(MAX_LEVEL, nullptr);
-        Node* curr = head;
-
-        for (int i = level - 1; i >= 0; i--) {
-            while (curr->forward[i] &&
-                curr->forward[i]->playerID < playerID) {
-                curr = curr->forward[i];
-            }
-            update[i] = curr;
-        }
-
-        curr = curr->forward[0];
-
-        if (curr && curr->playerID == playerID) {
-            for (int i = 0; i < level; i++) {
-                if (update[i]->forward[i] != curr)
-                    break;
-                update[i]->forward[i] = curr->forward[i];
-            }
-            delete curr;
-
-            while (level > 1 && head->forward[level - 1] == nullptr)
-                level--;
-        }
-    }*/
     void removePlayer(int playerID) override {
+        if (playerScores.find(playerID) == playerScores.end()) return;
+        int targetScore = playerScores[playerID];
+        playerScores.erase(playerID);
+
         vector<Node*> update(MAX_LEVEL, nullptr);
         Node* curr = head;
-
         for (int i = level - 1; i >= 0; i--) {
             while (curr->forward[i] &&
                 comesBefore(curr->forward[i]->score,
                     curr->forward[i]->playerID,
-                    INT_MAX, playerID)) {
+                    targetScore, playerID)) {
                 curr = curr->forward[i];
             }
             update[i] = curr;
         }
 
         curr = curr->forward[0];
-
         if (curr && curr->playerID == playerID) {
             for (int i = 0; i < level; i++) {
-                if (update[i]->forward[i] != curr)
-                    break;
+                if (update[i]->forward[i] != curr) break;
                 update[i]->forward[i] = curr->forward[i];
             }
             delete curr;
-
             while (level > 1 && head->forward[level - 1] == nullptr)
                 level--;
         }
     }
 
-
-
     vector<int> getTopN(int n) override {
         vector<int> result;
         Node* curr = head->forward[0];
-
         while (curr && n--) {
             result.push_back(curr->playerID);
             curr = curr->forward[0];
         }
         return result;
+    }
+
+    ~ConcreteLeaderboard() {
+        Node* curr = head;
+        while (curr) {
+            Node* next = curr->forward[0];
+            delete curr;
+            curr = next;
+        }
     }
 };
 
