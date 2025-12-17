@@ -39,16 +39,13 @@ private:
     };
     vector<Entry> hashTable;
     int tableSize;
-    int hash1(int key, int tableSize) { // h(k) = floor( n( kA mod 1 ) )
-        const double A = 0.618033;
-        //floor(tableSize*((key*A) % 1));
-        double fractionPart = key * A - floor(key * A);
-        return floor(tableSize * fractionPart);
+    int hash1(int key) { // h(k) = key % TABLE_SIZE
+        return (key % tableSize + tableSize) % tableSize;
     }
     //hash2(key) = PRIME – (key %PRIME) where PRIME is a prime smaller than the TABLE_SIZE.
     int hash2(int key) {
         const int prime = 97;
-        return (prime - key % prime);
+        return prime - ((key % prime + prime) % prime);
     }
 
 public:
@@ -62,11 +59,18 @@ public:
         // TODO: Implement double hashing insert
         // Remember to handle collisions using h1(key) + i * h2(key)
 
-        int index1 = hash1(playerID, tableSize);
+        int index1 = hash1(playerID);
         int index2 = hash2(playerID);
 
         for (int i = 0; i < tableSize; i++) {
             int position = (index1 + i * index2) % tableSize;
+            // Duplicate key → update value
+            if (hashTable[position].isOccupied &&
+                hashTable[position].key == playerID) {
+                hashTable[position].value = name;
+                return;
+            }
+            //// Empty slot → insert
             if (!hashTable[position].isOccupied) {
                 hashTable[position].key = playerID;
                 hashTable[position].value = name;
@@ -81,13 +85,17 @@ public:
     string search(int playerID) override {
         // TODO: Implement double hashing search
         // Return "" if player not found
-        int index1 = hash1(playerID, tableSize);
+        int index1 = hash1(playerID);
         int index2 = hash2(playerID);
 
         for (int i = 0; i < tableSize; i++) {
             int position = (index1 + i * index2) % tableSize;
 
-            if (hashTable[position].isOccupied && hashTable[position].key == playerID) {
+            if (!hashTable[position].isOccupied) {
+            return "";
+            }
+
+            if (hashTable[position].key == playerID) {
                 return hashTable[position].value;
             }
         }
