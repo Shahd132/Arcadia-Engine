@@ -121,18 +121,15 @@ private:
     int level;
     Node* head;
 
-    // Random level generator for skip list
     int randomLevel() {
         int lvl = 1;
         while ((rand() % 2) && lvl < MAX_LEVEL)
             lvl++;
         return lvl;
     }
-
-    // Returns true if (score1, id1) comes before (score2, id2)
     bool comesBefore(int score1, int id1, int score2, int id2) {
-        if (score1 != score2) return score1 > score2; // higher score first
-        return id1 < id2; // tie-break: smaller ID first
+        if (score1 != score2) return score1 > score2; 
+        return id1 < id2; 
     }
 
 public:
@@ -142,12 +139,10 @@ public:
     }
 
     void addScore(int playerID, int score) override {
-        removePlayer(playerID); // remove old score if exists
+        removePlayer(playerID); 
 
         vector<Node*> update(MAX_LEVEL, nullptr);
         Node* curr = head;
-
-        // Find predecessors at each level
         for (int i = level - 1; i >= 0; i--) {
             while (curr->forward[i] &&
                 comesBefore(curr->forward[i]->score, curr->forward[i]->playerID, score, playerID)) {
@@ -172,26 +167,43 @@ public:
     }
 
     void removePlayer(int playerID) override {
-        vector<Node*> update(MAX_LEVEL, nullptr);
-        Node* curr = head;
+        
+        Node* target = nullptr;
+        Node* curr = head->forward[0];
 
-        // Find predecessors at each level
+        while (curr) {
+            if (curr->playerID == playerID) {
+                target = curr;
+                break;
+            }
+            curr = curr->forward[0];
+        }
+
+        if (!target) return; 
+
+        int score = target->score;
+
+        vector<Node*> update(MAX_LEVEL, nullptr);
+        curr = head;
+
         for (int i = level - 1; i >= 0; i--) {
             while (curr->forward[i] &&
-                curr->forward[i]->playerID != playerID &&
-                comesBefore(curr->forward[i]->score, curr->forward[i]->playerID, INT_MIN, playerID)) {
+                comesBefore(curr->forward[i]->score,
+                    curr->forward[i]->playerID,
+                    score,
+                    playerID)) {
                 curr = curr->forward[i];
             }
             update[i] = curr;
         }
 
         curr = curr->forward[0];
-        if (!curr || curr->playerID != playerID)
-            return;
+        if (curr != target) return; 
 
         for (int i = 0; i < level; i++) {
-            if (update[i]->forward[i] == curr)
+            if (update[i]->forward[i] == curr) {
                 update[i]->forward[i] = curr->forward[i];
+            }
         }
 
         delete curr;
@@ -199,7 +211,6 @@ public:
         while (level > 1 && head->forward[level - 1] == nullptr)
             level--;
     }
-
 
     vector<int> getTopN(int n) override {
         vector<int> result;
