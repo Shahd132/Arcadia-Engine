@@ -549,8 +549,13 @@ long long InventorySystem::countStringPossibilities(string s) {
     // Rules: "uu" can be decoded as "w" or "uu"
     //        "nn" can be decoded as "m" or "nn"
     // Count total possible decodings
-    const long long MOD = 1e9+7;
+    const long long MOD = 1e9 + 7;
     int n = s.size();
+
+    for (char c : s) {
+        if (c != 'u' && c != 'n') return 0;
+    }
+
     vector<long long> dp(n + 1, 0);
     dp[0] = 1;
 
@@ -558,10 +563,8 @@ long long InventorySystem::countStringPossibilities(string s) {
         dp[i] = dp[i - 1];
 
         if (i >= 2) {
-            char c1 = s[i - 2];
-            char c2 = s[i - 1];
-
-            if ((c1 == 'u' && c2 == 'u') || (c1 == 'n' && c2 == 'n')) {
+            if ((s[i - 1] == 'u' && s[i - 2] == 'u') ||
+                (s[i - 1] == 'n' && s[i - 2] == 'n')) {
                 dp[i] = (dp[i] + dp[i - 2]) % MOD;
             }
         }
