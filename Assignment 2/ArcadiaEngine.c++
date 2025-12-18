@@ -15,9 +15,12 @@
 #include <map>
 #include <set>
 #include <functional>
+#include <queue>
 #include <unordered_map>
+#include <algorithm>
 
 using namespace std;
+
 
 // =========================================================
 // PART A: DATA STRUCTURES (Concrete Implementations)
@@ -117,8 +120,8 @@ private:
     static const int MAX_LEVEL = 16;
     int level;
     Node* head;
-    unordered_map<int, int> playerScores; // NEW: playerID -> score
 
+    // Random level generator for skip list
     int randomLevel() {
         int lvl = 1;
         while ((rand() % 2) && lvl < MAX_LEVEL)
@@ -126,9 +129,10 @@ private:
         return lvl;
     }
 
+    // Returns true if (score1, id1) comes before (score2, id2)
     bool comesBefore(int score1, int id1, int score2, int id2) {
-        if (score1 != score2) return score1 > score2;
-        return id1 < id2;
+        if (score1 != score2) return score1 > score2; // higher score first
+        return id1 < id2; // tie-break: smaller ID first
     }
 
 public:
@@ -138,16 +142,15 @@ public:
     }
 
     void addScore(int playerID, int score) override {
-        removePlayer(playerID); 
-        playerScores[playerID] = score;
+        removePlayer(playerID); // remove old score if exists
 
         vector<Node*> update(MAX_LEVEL, nullptr);
         Node* curr = head;
+
+        // Find predecessors at each level
         for (int i = level - 1; i >= 0; i--) {
             while (curr->forward[i] &&
-                comesBefore(curr->forward[i]->score,
-                    curr->forward[i]->playerID,
-                    score, playerID)) {
+                comesBefore(curr->forward[i]->score, curr->forward[i]->playerID, score, playerID)) {
                 curr = curr->forward[i];
             }
             update[i] = curr;
@@ -155,8 +158,9 @@ public:
 
         int newLevel = randomLevel();
         if (newLevel > level) {
-            for (int i = level; i < newLevel; i++)
+            for (int i = level; i < newLevel; i++) {
                 update[i] = head;
+            }
             level = newLevel;
         }
 
@@ -168,33 +172,34 @@ public:
     }
 
     void removePlayer(int playerID) override {
-        if (playerScores.find(playerID) == playerScores.end()) return;
-        int targetScore = playerScores[playerID];
-        playerScores.erase(playerID);
-
         vector<Node*> update(MAX_LEVEL, nullptr);
         Node* curr = head;
+
+        // Find predecessors at each level
         for (int i = level - 1; i >= 0; i--) {
             while (curr->forward[i] &&
-                comesBefore(curr->forward[i]->score,
-                    curr->forward[i]->playerID,
-                    targetScore, playerID)) {
+                curr->forward[i]->playerID != playerID &&
+                comesBefore(curr->forward[i]->score, curr->forward[i]->playerID, INT_MIN, playerID)) {
                 curr = curr->forward[i];
             }
             update[i] = curr;
         }
 
         curr = curr->forward[0];
-        if (curr && curr->playerID == playerID) {
-            for (int i = 0; i < level; i++) {
-                if (update[i]->forward[i] != curr) break;
+        if (!curr || curr->playerID != playerID)
+            return;
+
+        for (int i = 0; i < level; i++) {
+            if (update[i]->forward[i] == curr)
                 update[i]->forward[i] = curr->forward[i];
-            }
-            delete curr;
-            while (level > 1 && head->forward[level - 1] == nullptr)
-                level--;
         }
+
+        delete curr;
+
+        while (level > 1 && head->forward[level - 1] == nullptr)
+            level--;
     }
+
 
     vector<int> getTopN(int n) override {
         vector<int> result;
@@ -215,7 +220,6 @@ public:
         }
     }
 };
-
 
 // --- 3. AuctionTree (Red-Black Tree) ---
 class ConcreteAuctionTree : public AuctionTree {
@@ -332,6 +336,16 @@ private:
             oldNode->parent->right = newNode;
         newNode->parent = oldNode->parent;
     }
+    Node* searchByID(int itemID) {
+        Node* current = root;
+        while (current != NIL && current->id != itemID) {
+            if (itemID < current->id)
+                current = current->left;
+            else
+                current = current->right;
+        }
+        return current;
+    }
 
     Node* minimum(Node* node) {
         while (node->left != NIL)
@@ -425,10 +439,12 @@ public:
         while (current != NIL)
         {
             parent = current;
-            if (itemID < current->id)
+            if (price < current->price || (price == current->price && itemID < current->id)) {
                 current = current->left;
-            else
+            }
+            else {
                 current = current->right;
+            }
         }
         newNode->parent = parent;
         if (parent == NIL)
@@ -440,41 +456,31 @@ public:
         fixInsertion(newNode);
     }
 
-    void deleteItem(int itemID) override
-    {
-        Node* z = root;
-        while (z != NIL && z->id != itemID)
-        {
-            if (itemID < z->id)
-                z = z->left;
-            else
-                z = z->right;
-        }
-        if (z == NIL) return;
+    void deleteItem(int itemID) override {
+        Node* z = searchByID(itemID);
+        if (z == NIL) 
+            return;  
 
         Node* successor = z;
         Color originalColor = successor->color;
         Node* x;
 
-        if (z->left == NIL)
-        {
+        if (z->left == NIL) {
             x = z->right;
             replaceNode(z, z->right);
         }
-        else if (z->right == NIL)
-        {
+        else if (z->right == NIL) {
             x = z->left;
             replaceNode(z, z->left);
         }
-        else
-        {
+        else {
             successor = minimum(z->right);
             originalColor = successor->color;
             x = successor->right;
-            if (successor->parent == z)
+            if (successor->parent == z) {
                 x->parent = successor;
-            else
-            {
+            }
+            else {
                 replaceNode(successor, successor->right);
                 successor->right = z->right;
                 successor->right->parent = successor;
@@ -484,10 +490,13 @@ public:
             successor->left->parent = successor;
             successor->color = z->color;
         }
+
         if (originalColor == Black)
-            fixDeletion(x);
+            fixDeletion(x);  
+
         delete z;
     }
+
 };
 
 
@@ -775,34 +784,40 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) 
 // =========================================================
 
 int ServerKernel::minIntervals(vector<char>& tasks, int n) {
-    // TODO: Implement task scheduler with cooling time
-    // Same task must wait 'n' intervals before running again
-    // Return minimum total intervals needed (including idle time)
-    // Hint: Use greedy approach with frequency counting
-    if(tasks.empty())
+    if (tasks.empty()) 
         return 0;
-    if (n == 0)
-        return tasks.size();
+    if (n == 0) return 
+        tasks.size();
 
-    vector<int> freq(26, 0);
-    for (char t : tasks) {
-        freq[t - 'A']++;
+    unordered_map<char, int> freq;
+    for (size_t i = 0; i < tasks.size(); ++i) {
+        freq[tasks[i]]++;
     }
 
-    int maxFreq = 0;
-    for (int f : freq) {
-        maxFreq = max(maxFreq, f);
+    priority_queue<int> pq;
+    for (unordered_map<char, int>::iterator it = freq.begin(); it != freq.end(); ++it) {
+        pq.push(it->second); 
     }
 
-    int countMax = 0;
-    for (int f : freq) {
-        if (f == maxFreq)
-            countMax++;
+    int intervals = 0;
+    while (!pq.empty()) {
+        vector<int> temp;
+        int cycle = n + 1;
+
+        while (cycle > 0 && !pq.empty()) {
+            int top = pq.top(); pq.pop();
+            top--; 
+            if (top > 0) temp.push_back(top); 
+            intervals++;
+            cycle--;
+        }
+        for (size_t i = 0; i < temp.size(); ++i) {
+            pq.push(temp[i]);
+        }
+        if (!pq.empty()) intervals += cycle; 
     }
 
-    int intervals = (maxFreq - 1) * (n + 1) + countMax;
-
-    return max((int)tasks.size(), intervals);
+    return intervals;
 }
 
 // =========================================================
